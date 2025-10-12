@@ -1,5 +1,9 @@
 # MyDevDuck API
 
+TODO
+- add repository tests
+- add valid annotations in controllers
+
 Spring Boot 3.2.x REST API for MyDevDuck application.
 
 ## Technology Stack
