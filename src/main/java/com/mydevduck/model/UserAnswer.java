@@ -1,5 +1,6 @@
 package com.mydevduck.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -30,10 +31,12 @@ public class UserAnswer {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_user_answer_user"))
+    @JsonIgnore
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "question_id", nullable = false, foreignKey = @ForeignKey(name = "fk_user_answer_question"))
+    @JsonIgnore
     private MCQQuestion question;
 
     @Column(name = "selected_answer", nullable = false)
