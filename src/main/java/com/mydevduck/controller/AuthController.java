@@ -1,14 +1,19 @@
 package com.mydevduck.controller;
 
+import com.mydevduck.dto.request.RegisterRequest;
+import com.mydevduck.dto.response.AuthResponse;
 import com.mydevduck.dto.response.UserDTO;
 import com.mydevduck.model.User;
+import com.mydevduck.model.UserRole;
 import com.mydevduck.repository.UserRepository;
 import com.mydevduck.security.JwtTokenProvider;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -24,32 +29,43 @@ public class AuthController {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    /**
-     * POST /api/v1/auth/validate
-     *
-     * Purpose: Validate a JWT token and return user info from the token claims
-     *
-     * Request: POST with Authorization header
-     * Header: Authorization: Bearer <jwt-token>
-     *
-     * Response (Success - 200):
-     * {
-     *   "valid": true,
-     *   "userId": "550e8400-e29b-41d4-a716-446655440000",
-     *   "email": "user@example.com",
-     *   "role": "USER",
-     *   "message": "Token is valid"
-     * }
-     *
-     * Response (Error - 401):
-     * {
-     *   "timestamp": "...",
-     *   "status": 401,
-     *   "error": "Unauthorized",
-     *   "message": "Invalid or expired token"
-     * }
-     */
+    @PostMapping("/register")
+    public ResponseEntity<AuthResponse> register (@Valid
+            @RequestBody RegisterRequest request) {
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
+        }
+
+        User user = new User();
+        user.setEmail(request.getEmail());
+        user.setGithubUsername(request.getGithubUsername());
+        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        user.setRole(UserRole.USER);
+        user = userRepository.save(user);
+
+
+        String token = jwtTokenProvider.generateAccessToken(
+                user.getId(),
+                user.getEmail(),
+                user.getRole().toString());
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
+        UserDTO userDTO = new UserDTO(
+                user.getId(),
+                user.getEmail(),
+                user.getGithubUsername(),
+                user.getRole(),
+                user.getCreatedAt());
+        AuthResponse response = AuthResponse.builder()
+                .token(token)
+                .refreshToken(refreshToken)
+                .user(userDTO)
+                .tokenType("Bearer")
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/validate")
     public ResponseEntity<Map<String, Object>> validateToken(
             @RequestHeader("Authorization") String authHeader) {
@@ -85,36 +101,7 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * GET /api/v1/auth/me
-     *
-     * Purpose: Get current authenticated user's full information from database
-     *
-     * How it works:
-     * 1. JwtAuthenticationFilter automatically validates the JWT token (BEFORE this method runs)
-     * 2. If token is valid, filter extracts userId and sets it in SecurityContext
-     * 3. @AuthenticationPrincipal automatically injects the userId into this method parameter
-     * 4. We use that userId to look up the user in the database
-     * 5. Return the full user details
-     *
-     * Request: GET with Authorization header
-     * Header: Authorization: Bearer <jwt-token>
-     *
-     * Response (Success - 200):
-     * {
-     *   "id": "550e8400-e29b-41d4-a716-446655440000",
-     *   "email": "user@example.com",
-     *   "githubUsername": "johndoe",
-     *   "role": "USER",
-     *   "createdAt": "2025-10-01T10:30:00"
-     * }
-     *
-     * Response (Error - 401):
-     * User not authenticated (no valid JWT token)
-     *
-     * Response (Error - 404):
-     * User ID from token doesn't exist in database
-     */
+
     @GetMapping("/me")
     public ResponseEntity<UserDTO> getCurrentUser(@AuthenticationPrincipal UUID userId) {
 
