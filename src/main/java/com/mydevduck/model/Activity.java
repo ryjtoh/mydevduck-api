@@ -2,10 +2,7 @@ package com.mydevduck.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
@@ -14,6 +11,7 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = "user")
 @EqualsAndHashCode(exclude = "user")
 @Entity
 @Table(name = "activities", indexes = {

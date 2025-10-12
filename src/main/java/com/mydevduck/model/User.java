@@ -2,10 +2,9 @@ package com.mydevduck.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
+
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -17,6 +16,7 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = {"pets", "activities", "passwordHash"})
 @EqualsAndHashCode(exclude = {"pets", "activities"})
 @Entity
 @Table(name = "users", indexes = {

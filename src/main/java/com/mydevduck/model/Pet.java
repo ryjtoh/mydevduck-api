@@ -5,10 +5,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -18,6 +15,7 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = "user")
 @EqualsAndHashCode(exclude = "user")
 @Entity
 @Table(name = "pets", indexes = {
