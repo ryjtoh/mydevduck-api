@@ -1,7 +1,10 @@
 package com.mydevduck.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 
@@ -29,12 +32,16 @@ public class User {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @NotNull
     @Column(nullable = false, unique = true, length = 255)
+    @Email
     private String email;
 
+    @Nullable
     @Column(name = "github_username", unique = true, length = 100)
     private String githubUsername;
 
+    @NotNull
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 

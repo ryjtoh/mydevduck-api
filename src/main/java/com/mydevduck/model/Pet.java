@@ -1,10 +1,9 @@
 package com.mydevduck.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -32,6 +31,7 @@ public class Pet {
     @JsonIgnore
     private User user;
 
+    @NotNull
     @Column(nullable = false, length = 50)
     @Size(max = 50)
     private String name;
@@ -59,9 +59,11 @@ public class Pet {
     @Min(0)
     private Integer xp = 0;
 
+    @Nullable
     @Column(name = "last_fed_at")
     private LocalDateTime lastFedAt;
 
+    @Nullable
     @Column(name = "last_played_at")
     private LocalDateTime lastPlayedAt;
 

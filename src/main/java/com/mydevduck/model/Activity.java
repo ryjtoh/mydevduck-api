@@ -2,6 +2,10 @@ package com.mydevduck.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -30,13 +34,18 @@ public class Activity {
     @JsonIgnore
     private User user;
 
+    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private ActivityType type;
 
+    @NotBlank
     @Column(nullable = false, columnDefinition = "TEXT")
     private String description;
 
+    @NotNull
+    @Min(0)
+    @Max(100)
     @Column(nullable = false)
     private Integer points;
 
