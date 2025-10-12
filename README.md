@@ -1,137 +1,116 @@
-# MyDevDuck
+# MyDevDuck API
 
-A Next.js 14 application with TypeScript, Tailwind CSS, and shadcn/ui.
+Spring Boot 3.2.x REST API for MyDevDuck application.
 
-## Getting Started
+## Technology Stack
 
-### Prerequisites
+- **Java**: 17
+- **Spring Boot**: 3.2.5
+- **Database**: PostgreSQL
+- **Cache**: Redis
+- **Security**: Spring Security + JWT
+- **Build Tool**: Maven
 
-- Node.js 18+
-- npm or yarn
+## Prerequisites
 
-### Installation
+- Java 17+
+- Maven 3.6+
+- PostgreSQL 14+
+- Redis 6+
 
-1. Clone the repository:
+## Configuration
+
+### Database Setup
+
+1. Create PostgreSQL database:
+```sql
+CREATE DATABASE mydevduck_dev;
+```
+
+2. Update `src/main/resources/application.yml` with your database credentials:
+```yaml
+spring:
+  datasource:
+    username: your_username
+    password: your_password
+```
+
+### Environment Variables
+
+Set the following environment variables:
+
+- `DB_USERNAME`: Database username (default: postgres)
+- `DB_PASSWORD`: Database password (default: postgres)
+- `REDIS_PASSWORD`: Redis password (if required)
+- `JWT_SECRET`: JWT secret key (must be at least 256 bits)
+
+### JWT Secret
+
+Generate a secure JWT secret:
+```bash
+openssl rand -base64 32
+```
+
+Set it as an environment variable or in application.yml.
+
+## Running the Application
+
+### Development Mode
 
 ```bash
-git clone https://github.com/ryjtoh/mydevduck.git
-cd mydevduck
+mvn spring-boot:run
 ```
 
-2. Install dependencies:
+### Production Mode
 
 ```bash
-npm install
+mvn clean package
+java -jar -Dspring.profiles.active=prod target/mydevduck-api-0.0.1-SNAPSHOT.jar
 ```
 
-3. Set up environment variables:
+## API Endpoints
 
-```bash
-cp .env.example .env
-```
-
-Edit `.env` and fill in your actual values for:
-
-- MongoDB connection string
-- Upstash Redis credentials
-- Upstash Kafka credentials
-- NextAuth configuration
-- GitHub OAuth credentials
-
-4. Run the development server:
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-## Tech Stack
-
-- **Framework**: Next.js 15 (App Router)
-- **Language**: TypeScript (strict mode)
-- **Styling**: Tailwind CSS v3
-- **UI Components**: shadcn/ui
-- **Code Quality**: ESLint + Prettier
-- **Database**: MongoDB
-- **Caching**: Upstash Redis
-- **Event Streaming**: Upstash Kafka
-- **Authentication**: NextAuth.js
-
-## Folder Structure
+### Health Check
 
 ```
-mydevduck/
-├── app/                          # Next.js App Router
-│   ├── (dashboard)/              # Route group for dashboard pages
-│   │   ├── layout.tsx            # Dashboard layout with sidebar
-│   │   └── page.tsx              # Dashboard home page
-│   ├── api/                      # API routes
-│   │   ├── graphql/              # GraphQL endpoint
-│   │   ├── webhooks/             # Webhook handlers
-│   │   └── activities/           # Activity tracking endpoints
-│   ├── globals.css               # Global styles with Tailwind
-│   └── layout.tsx                # Root layout
-├── components/                   # React components
-│   ├── pet/                      # Pet-specific components (Tamagotchi)
-│   ├── ui/                       # shadcn/ui components (reusable primitives)
-│   └── dashboard/                # Dashboard-specific components
-│       └── sidebar.tsx           # Navigation sidebar
-├── lib/                          # Utility libraries
-│   ├── db/                       # MongoDB connection and queries
-│   ├── kafka/                    # Kafka producer/consumer
-│   ├── redis/                    # Redis client configuration
-│   ├── auth/                     # NextAuth configuration
-│   ├── utils/                    # Shared utility functions
-│   └── utils.ts                  # cn() for class merging
-├── types/                        # TypeScript type definitions
-├── public/                       # Static assets
-│   └── assets/                   # Images, icons, etc.
-└── ...config files
+GET /api/health
 ```
 
-## Folder Structure Reasoning
+### Authentication
 
-### App Router Organization
+```
+POST /api/auth/login
+POST /api/auth/register
+```
 
-- **`(dashboard)` Route Group**: Groups authenticated dashboard pages without adding `/dashboard` to the URL path. This keeps URLs clean while organizing related pages together.
-- **`/api` Routes**: Separates API concerns into logical groups:
-  - `/graphql` - GraphQL API for flexible data queries
-  - `/webhooks` - External webhook handlers (GitHub, etc.)
-  - `/activities` - Activity tracking and metrics
+## Project Structure
 
-### Component Organization
+```
+com.mydevduck
+├── controller       # REST endpoints
+├── service          # Business logic
+├── repository       # Data access layer
+├── model            # Entity classes
+├── dto              # Request/Response objects
+├── config           # Configuration classes
+├── exception        # Custom exceptions and handlers
+├── security         # Authentication and authorization
+└── util             # Helper utilities
+```
 
-- **`/components/pet`**: Pet-specific UI components for Tamagotchi features (pet display, interactions, status)
-- **`/components/ui`**: shadcn/ui primitive components (buttons, cards, dialogs) - reusable across the app
-- **`/components/dashboard`**: Dashboard-specific composed components (sidebar, header, widgets)
+## Development
 
-This separation follows the principle of **feature-based organization** at the top level and **reusability** at the component level.
+### Code Style
 
-### Lib Organization
+- Use Lombok annotations to reduce boilerplate
+- Follow Spring Boot best practices
+- Write unit tests for services
+- Use validation annotations on DTOs
 
-Each integration gets its own module for clear separation of concerns:
+### Database Migrations
 
-- **`/lib/db`**: MongoDB connection pooling, schema models, and database queries
-- **`/lib/kafka`**: Event streaming producers and consumers for activity tracking
-- **`/lib/redis`**: Caching layer for session management and real-time features
-- **`/lib/auth`**: NextAuth.js configuration and authentication helpers
-- **`/lib/utils`**: Shared utility functions (date formatting, validation, etc.)
-
-This structure promotes:
-
-- **Testability**: Each module can be tested in isolation
-- **Maintainability**: Easy to locate and update specific integrations
-- **Scalability**: Simple to add new integrations without cluttering
-
-## Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
-- `npm run format` - Format code with Prettier
+Consider using Flyway or Liquibase for production database migrations (set `ddl-auto: validate`).
 
 ## License
 
-ISC
+Proprietary
