@@ -1,5 +1,6 @@
 package com.mydevduck.controller;
 
+import com.mydevduck.dto.request.LoginRequest;
 import com.mydevduck.dto.request.RegisterRequest;
 import com.mydevduck.dto.response.AuthResponse;
 import com.mydevduck.dto.response.UserDTO;
@@ -19,6 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -30,6 +32,35 @@ public class AuthController {
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponse> login (@Valid @RequestBody LoginRequest loginRequest) {
+        Optional<User> userOptional = userRepository.findByEmail(loginRequest.getEmail());
+        if (userOptional.isEmpty() ||
+            !passwordEncoder.matches(loginRequest.getPassword(), userOptional.get().getPasswordHash())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
+        }
+
+        User user = userOptional.get();
+        String token = jwtTokenProvider.generateAccessToken(
+                user.getId(),
+                user.getEmail(),
+                user.getRole().toString());
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
+        UserDTO userDTO = new UserDTO(
+                user.getId(),
+                user.getEmail(),
+                user.getGithubUsername(),
+                user.getRole(),
+                user.getCreatedAt());
+        AuthResponse response = AuthResponse.builder()
+                .token(token)
+                .refreshToken(refreshToken)
+                .user(userDTO)
+                .tokenType("Bearer")
+                .build();
+        return ResponseEntity.ok(response);
+    }
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register (@Valid
