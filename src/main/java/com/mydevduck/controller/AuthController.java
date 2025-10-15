@@ -1,6 +1,7 @@
 package com.mydevduck.controller;
 
 import com.mydevduck.dto.request.LoginRequest;
+import com.mydevduck.dto.request.RefreshRequest;
 import com.mydevduck.dto.request.RegisterRequest;
 import com.mydevduck.dto.response.AuthResponse;
 import com.mydevduck.dto.response.UserDTO;
@@ -12,6 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,6 +34,37 @@ public class AuthController {
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refresh (@Valid @RequestBody RefreshRequest request) {
+        String refreshToken = request.getRefreshToken();
+        if (!jwtTokenProvider.validateToken(refreshToken)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid or expired refresh token.");
+        }
+
+        UUID userId = jwtTokenProvider.getUserIdFromToken(refreshToken);
+        Optional<User> userOptional = userRepository.findById(userId);
+        if (userOptional.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
+        }
+        User user = userOptional.get();
+
+        String token = jwtTokenProvider.generateAccessToken(userId, user.getEmail(), user.getRole().toString());
+
+        UserDTO userDTO = new UserDTO(
+                user.getId(),
+                user.getEmail(),
+                user.getGithubUsername(),
+                user.getRole(),
+                user.getCreatedAt());
+        AuthResponse response = AuthResponse.builder()
+                .token(token)
+                .refreshToken(refreshToken)
+                .user(userDTO)
+                .tokenType("Bearer")
+                .build();
+        return ResponseEntity.ok(response);
+    }
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login (@Valid @RequestBody LoginRequest loginRequest) {
