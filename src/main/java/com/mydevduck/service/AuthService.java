@@ -9,6 +9,7 @@ import com.mydevduck.model.UserRole;
 import com.mydevduck.repository.UserRepository;
 import com.mydevduck.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,15 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.UUID;
 
+// TODO: Write integration tests for AuthService
+//  - Test successful registration, login, token refresh
+//  - Test duplicate email registration (409 error)
+//  - Test invalid credentials (401 error)
+//  - Test expired/invalid refresh tokens
+//  - Use @SpringBootTest, TestRestTemplate, and test database (H2)
+//  - Create test fixtures for User entities
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -24,6 +34,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final LoginAttemptService loginAttemptService;
 
     /**
      * Register a new user with email and password
@@ -34,6 +45,10 @@ public class AuthService {
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         // Check for duplicate email
+        // TODO (OPTIONAL): Create EmailAlreadyExistsException extends RuntimeException for cleaner exception handling
+        //  - Create custom exception class in com.mydevduck.exception package
+        //  - Add @ControllerAdvice to handle it globally
+        //  - Replace ResponseStatusException with custom exception
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
         }
@@ -78,16 +93,33 @@ public class AuthService {
      */
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
+        String email = request.getEmail();
+
+        // Check if account is locked due to too many failed attempts
+        if (loginAttemptService.isBlocked(email)) {
+            log.warn("Login attempt blocked for locked account: {}", email);
+            throw new ResponseStatusException(
+                    HttpStatus.TOO_MANY_REQUESTS,
+                    "Too many failed login attempts. Please try again later.");
+        }
+
         // Find user by email
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.UNAUTHORIZED,
-                        "Invalid credentials"));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> {
+                    loginAttemptService.loginFailed(email);
+                    return new ResponseStatusException(
+                            HttpStatus.UNAUTHORIZED,
+                            "Invalid credentials");
+                });
 
         // Validate password
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            loginAttemptService.loginFailed(email);
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
+
+        // Reset failed attempts on successful login
+        loginAttemptService.loginSucceeded(email);
 
         // Generate tokens
         String accessToken = jwtTokenProvider.generateAccessToken(
@@ -95,6 +127,13 @@ public class AuthService {
                 user.getEmail(),
                 user.getRole().toString());
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
+
+        // TODO (RECOMMENDED): Store refresh token in database for revocation support
+        //  - Create RefreshToken entity with: id, userId, token, expiresAt, createdAt
+        //  - Save refresh token to database here
+        //  - On logout: delete refresh token from database
+        //  - On refresh: verify token exists in database before issuing new access token
+        //  - Add scheduled job to clean up expired tokens
 
         // Build response
         UserDTO userDTO = new UserDTO(

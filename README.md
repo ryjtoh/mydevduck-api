@@ -1,10 +1,46 @@
 # MyDevDuck API
 
-TODO
-- add repository tests
-- add valid annotations in controllers
-
 Spring Boot 3.2.x REST API for MyDevDuck application.
+
+## Future Enhancements / TODOs
+
+### High Priority
+- **Integration Tests for AuthService** (STRONGLY RECOMMENDED)
+  - Test successful registration, login, token refresh
+  - Test duplicate email registration (409 error)
+  - Test invalid credentials (401 error)
+  - Test expired/invalid refresh tokens
+  - Test brute force protection lockout
+  - Use `@SpringBootTest`, `TestRestTemplate`, and test database (H2)
+  - Create test fixtures for User entities
+
+- **Refresh Token Database Storage** (RECOMMENDED)
+  - Create `RefreshToken` entity with: id, userId, token, expiresAt, createdAt
+  - Save refresh token to database on login
+  - On logout: delete refresh token from database
+  - On refresh: verify token exists in database before issuing new access token
+  - Add scheduled job to clean up expired tokens
+  - Enables token revocation for security
+
+### Medium Priority
+- **Add Swagger/OpenAPI Documentation** (RECOMMENDED)
+  - Add `@Tag(name = "Authentication", description = "Authentication endpoints")` to controllers
+  - Add `@Operation`, `@ApiResponse` annotations to each endpoint
+  - Document request/response schemas with examples
+  - Configure Swagger UI in application.yml
+
+- **Repository Tests**
+  - Add unit tests for repository layer
+
+### Low Priority
+- **Custom Exception Handling** (OPTIONAL)
+  - Use the existing `EmailAlreadyExistsException` in AuthService
+  - Add `@ControllerAdvice` to handle exceptions globally
+  - Replace `ResponseStatusException` with custom exceptions throughout codebase
+
+- **Add validation annotations in controllers**
+  - Ensure all `@RequestBody` parameters use `@Valid`
+  - Add appropriate constraint annotations to DTOs
 
 ## Technology Stack
 

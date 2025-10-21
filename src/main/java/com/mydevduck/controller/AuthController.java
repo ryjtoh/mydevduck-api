@@ -20,6 +20,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+// TODO (RECOMMENDED): Add Swagger/OpenAPI annotations for API documentation
+//  - Add @Tag(name = "Authentication", description = "Authentication endpoints")
+//  - Add @Operation, @ApiResponse annotations to each endpoint
+//  - Document request/response schemas with examples
+//  - Configure Swagger UI in application.yml
+
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -65,13 +71,6 @@ public class AuthController {
         String email = jwtTokenProvider.getEmailFromToken(token);
         String role = jwtTokenProvider.getRoleFromToken(token);
 
-        // TODO: Step 4 - Build response map
-        //  - Create a Map<String, Object>
-        //  - Put: "valid" → true
-        //  - Put: "userId" → userId
-        //  - Put: "email" → email
-        //  - Put: "role" → role
-        //  - Put: "message" → "Token is valid"
         Map<String, Object> response = new HashMap<>();
         response.put("valid", true);
         response.put("userId", userId);
@@ -81,7 +80,6 @@ public class AuthController {
 
         return ResponseEntity.ok(response);
     }
-
 
     @GetMapping("/me")
     public ResponseEntity<UserDTO> getCurrentUser(@AuthenticationPrincipal UUID userId) {
