@@ -22,6 +22,6 @@ public class PetController {
 
     @PostMapping("/create")
     public PetDTO create(@RequestBody CreatePetRequest request) {
-        return petService.createPet(request.getEmail(), request.getName());
+        return petService.createPet(request.getToken(), request.getName());
     }
 }

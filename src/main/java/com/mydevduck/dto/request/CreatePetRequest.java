@@ -16,8 +16,7 @@ public class CreatePetRequest {
     @Size(max = 50, message = "Pet name must not exceed 50 characters")
     private String name;
 
-    @NotBlank(message = "Email is required")
-    @Email(message = "Email must be valid")
-    private String email;
+    @NotBlank(message = "Access token is required")
+    private String token;
 
 }
