@@ -11,8 +11,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
-
 @Slf4j
 @Service
 @AllArgsConstructor
@@ -28,23 +26,35 @@ public class PetService {
         }
 
         String email = jwtTokenProvider.getEmailFromToken(token);
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new InvalidRequestException("User not found."));
 
-        if (!userRepository.existsByEmail(email)) {
-            throw new InvalidRequestException("User with this email does not exist.");
+        long petCount = petRepository.countByUser(user);
+        if (petCount >= 5) {
+            throw new InvalidRequestException("User already has 5 pets!");
         }
-
-        Optional<User> userOptional = userRepository.findByEmail(email);
-
-        if (userOptional.isEmpty()) {
-            throw new InvalidRequestException("User not found.");
+        if (petRepository.existsByUserAndName(user, name)) {
+            throw new InvalidRequestException("User already has a pet with this name!");
         }
-
-        User user = userOptional.get();
 
         Pet pet = new Pet();
         pet.setUser(user);
         pet.setName(name);
 
-        return new PetDTO(pet.getId(), pet.getName(), pet.getHealth(), pet.getHappiness(), pet.getHunger(), pet.getLevel(), pet.getXp(), pet.getLastFedAt(), pet.getLastPlayedAt(), pet.getCreatedAt(), pet.getUpdatedAt());
+        Pet savedPet = petRepository.save(pet);
+
+        return new PetDTO(
+            savedPet.getId(),
+            savedPet.getName(),
+            savedPet.getHealth(),
+            savedPet.getHappiness(),
+            savedPet.getHunger(),
+            savedPet.getLevel(),
+            savedPet.getXp(),
+            savedPet.getLastFedAt(),
+            savedPet.getLastPlayedAt(),
+            savedPet.getCreatedAt(),
+            savedPet.getUpdatedAt()
+        );
     }
 }
