@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/pets")
@@ -20,5 +22,11 @@ public class PetController {
     public PetDTO create(@RequestBody @Valid CreatePetRequest request, @RequestHeader("Authorization") String authHeader) {
         String token = authHeader.substring(7);
         return petService.createPet(token, request.getName());
+    }
+
+    @GetMapping("/{id}")
+    public PetDTO get(@PathVariable UUID id, @RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7);
+        return petService.getPetById(token, id);
     }
 }

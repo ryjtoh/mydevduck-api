@@ -11,6 +11,8 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Slf4j
 @Service
 @AllArgsConstructor
@@ -55,6 +57,33 @@ public class PetService {
             savedPet.getLastPlayedAt(),
             savedPet.getCreatedAt(),
             savedPet.getUpdatedAt()
+        );
+    }
+
+    public PetDTO getPetById(String token, UUID id) {
+        if (!jwtTokenProvider.validateToken(token)) {
+            throw new InvalidRequestException("Invalid token.");
+        }
+
+        String email = jwtTokenProvider.getEmailFromToken(token);
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new InvalidRequestException("User not found."));
+
+        Pet pet = petRepository.findByIdAndUser(id, user)
+            .orElseThrow(() -> new InvalidRequestException("Pet not found or you don't own this pet."));
+
+        return new PetDTO(
+                pet.getId(),
+                pet.getName(),
+                pet.getHealth(),
+                pet.getHappiness(),
+                pet.getHunger(),
+                pet.getLevel(),
+                pet.getXp(),
+                pet.getLastFedAt(),
+                pet.getLastPlayedAt(),
+                pet.getCreatedAt(),
+                pet.getUpdatedAt()
         );
     }
 }
