@@ -54,4 +54,11 @@ public class PetController {
         PetDTO pet = petService.feedPet(token, id);
         return ResponseEntity.ok(pet);
     }
+
+    @PostMapping("/{id}/play")
+    public ResponseEntity<PetDTO> play(@PathVariable UUID id, @RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7);
+        PetDTO pet = petService.playWithPet(token, id);
+        return ResponseEntity.ok(pet);
+    }
 }

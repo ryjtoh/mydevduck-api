@@ -130,4 +130,31 @@ public class PetService {
 
         return petMapper.toDTO(updatedPet);
     }
+
+    public PetDTO playWithPet(String token, UUID id) {
+        if (!jwtTokenProvider.validateToken(token)) {
+            throw new InvalidRequestException("Invalid token.");
+        }
+
+        String email = jwtTokenProvider.getEmailFromToken(token);
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new InvalidRequestException("User with this email doesn't exist"));
+
+        Pet pet = petRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new InvalidRequestException("User does not own this pet."));
+
+        if (pet.getHappiness() > 90) {
+            throw new InvalidRequestException("Pet has a happiness of 90.");
+        }
+
+        pet.setHappiness(Math.min(100, pet.getHappiness() + 15));
+        pet.setXp(pet.getXp() + 3);
+        pet.setLastPlayedAt(LocalDateTime.now());
+        pet.setUpdatedAt(LocalDateTime.now());
+
+        Pet updatedPet = petRepository.save(pet);
+
+        return petMapper.toDTO(updatedPet);
+    }
 }
