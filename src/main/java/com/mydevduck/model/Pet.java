@@ -83,4 +83,7 @@ public class Pet {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    @Column(nullable = false)
+    private boolean isDead;
+
 }

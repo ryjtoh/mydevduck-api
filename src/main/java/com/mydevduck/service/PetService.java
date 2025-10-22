@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -191,5 +192,51 @@ public class PetService {
                 pet.getCreatedAt()
         );
 
+    }
+
+    @Transactional
+    public PetDTO revivePet(String token, UUID petId) {
+        if (!jwtTokenProvider.validateToken(token)) {
+            throw new InvalidRequestException("Invalid token.");
+        }
+
+        String email = jwtTokenProvider.getEmailFromToken(token);
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new InvalidRequestException("User not found."));
+
+        Pet pet = petRepository.findByIdAndUser(petId, user)
+            .orElseThrow(() -> new InvalidRequestException("Pet not found or you don't own this pet."));
+
+        if (!pet.isDead()) {
+            throw new InvalidRequestException("Pet is not dead.");
+        }
+
+        // Revive the pet with partial stats
+        pet.setDead(false);
+        pet.setHealth(50);
+        pet.setHunger(50);
+        pet.setHappiness(50);
+
+        petRepository.save(pet);
+
+        log.info("Pet '{}' (ID: {}) has been revived by user '{}'", pet.getName(), pet.getId(), user.getEmail());
+
+        return petMapper.toDTO(pet);
+    }
+
+    public List<PetDTO> getPetsNeedingAttention(String token) {
+        if (!jwtTokenProvider.validateToken(token)) {
+            throw new InvalidRequestException("Invalid token.");
+        }
+
+        String email = jwtTokenProvider.getEmailFromToken(token);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new InvalidRequestException("User not found."));
+
+        List<Pet> pets = petRepository.findPetsNeedingAttention(user);
+
+        return pets.stream()
+                .map(petMapper::toDTO)
+                .toList();
     }
 }
