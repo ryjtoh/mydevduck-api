@@ -12,6 +12,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Slf4j
@@ -101,5 +102,32 @@ public class PetService {
             .orElseThrow(() -> new InvalidRequestException("Pet not found or you don't own this pet."));
 
         petRepository.delete(pet);
+    }
+
+    public PetDTO feedPet(String token, UUID id) {
+        if (!jwtTokenProvider.validateToken(token)) {
+            throw new InvalidRequestException("Invalid token.");
+        }
+
+        UUID userId = jwtTokenProvider.getUserIdFromToken(token);
+        User user =  userRepository.findById(userId)
+                .orElseThrow(() -> new InvalidRequestException("User does not exist"));
+
+
+        Pet pet = petRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new InvalidRequestException("User does not own pet."));
+
+        if (pet.getHunger() > 90) {
+            throw new InvalidRequestException("Pet hunger is above 90.");
+        }
+
+        pet.setHunger(Math.min(pet.getHunger() + 20, 100));
+        pet.setXp(pet.getXp() + 5);
+        pet.setUpdatedAt(LocalDateTime.now());
+        pet.setLastFedAt(LocalDateTime.now());
+
+        Pet updatedPet = petRepository.save(pet);
+
+        return petMapper.toDTO(updatedPet);
     }
 }

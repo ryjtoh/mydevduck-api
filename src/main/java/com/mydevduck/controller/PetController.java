@@ -21,21 +21,24 @@ public class PetController {
     private final PetService petService;
 
     @PostMapping("/create")
-    public PetDTO create(@RequestBody @Valid CreatePetRequest request, @RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<PetDTO> create(@RequestBody @Valid CreatePetRequest request, @RequestHeader("Authorization") String authHeader) {
         String token = authHeader.substring(7);
-        return petService.createPet(token, request.getName());
+        PetDTO pet = petService.createPet(token, request.getName());
+        return ResponseEntity.status(201).body(pet);
     }
 
     @GetMapping("/{id}")
-    public PetDTO get(@PathVariable UUID id, @RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<PetDTO> get(@PathVariable UUID id, @RequestHeader("Authorization") String authHeader) {
         String token = authHeader.substring(7);
-        return petService.getPetById(token, id);
+        PetDTO pet = petService.getPetById(token, id);
+        return ResponseEntity.ok(pet);
     }
 
     @PutMapping("/{id}")
-    public PetDTO update(@PathVariable UUID id, @RequestBody @Valid UpdatePetRequest request, @RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<PetDTO> update(@PathVariable UUID id, @RequestBody @Valid UpdatePetRequest request, @RequestHeader("Authorization") String authHeader) {
         String token = authHeader.substring(7);
-        return petService.updatePet(token, id, request.getName());
+        PetDTO pet = petService.updatePet(token, id, request.getName());
+        return ResponseEntity.ok(pet);
     }
 
     @DeleteMapping("/{id}")
@@ -43,5 +46,12 @@ public class PetController {
         String token = authHeader.substring(7);
         petService.deletePet(token, id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/feed")
+    public ResponseEntity<PetDTO> feed(@PathVariable UUID id, @RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7);
+        PetDTO pet = petService.feedPet(token, id);
+        return ResponseEntity.ok(pet);
     }
 }
