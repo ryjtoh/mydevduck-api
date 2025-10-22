@@ -6,7 +6,9 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.Where;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -20,6 +22,8 @@ import java.util.UUID;
 @Table(name = "pets", indexes = {
         @Index(name = "idx_pet_user_id", columnList = "user_id")
 })
+@SQLDelete(sql = "UPDATE pets SET deleted_at = NOW() WHERE id = ?")
+@Where(clause = "deleted_at IS NULL")
 public class Pet {
 
     @Id
@@ -74,5 +78,9 @@ public class Pet {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    @Nullable
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
 }

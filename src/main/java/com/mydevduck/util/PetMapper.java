@@ -4,15 +4,13 @@ import com.mydevduck.dto.request.CreatePetRequest;
 import com.mydevduck.dto.response.PetDTO;
 import com.mydevduck.model.Pet;
 import com.mydevduck.model.User;
-import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
 
-@Component
-@RequiredArgsConstructor
-public class PetMapper {
+import java.util.List;
+import java.util.stream.Collectors;
 
-    private final ModelMapper modelMapper;
+@Component
+public class PetMapper {
 
     // CreatePetRequest -> Entity
     public Pet toEntity(CreatePetRequest request, User user) {
@@ -26,7 +24,26 @@ public class PetMapper {
 
     // Entity -> DTO
     public PetDTO toDTO(Pet pet) {
-        return modelMapper.map(pet, PetDTO.class);
+        return new PetDTO(
+            pet.getId(),
+            pet.getName(),
+            pet.getHealth(),
+            pet.getHappiness(),
+            pet.getHunger(),
+            pet.getLevel(),
+            pet.getXp(),
+            pet.getLastFedAt(),
+            pet.getLastPlayedAt(),
+            pet.getCreatedAt(),
+            pet.getUpdatedAt()
+        );
+    }
+
+    // List<Entity> -> List<DTO>
+    public List<PetDTO> toDTOList(List<Pet> pets) {
+        return pets.stream()
+            .map(this::toDTO)
+            .collect(Collectors.toList());
     }
 
 }

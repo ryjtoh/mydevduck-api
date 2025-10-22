@@ -7,6 +7,7 @@ import com.mydevduck.model.User;
 import com.mydevduck.repository.PetRepository;
 import com.mydevduck.repository.UserRepository;
 import com.mydevduck.security.JwtTokenProvider;
+import com.mydevduck.util.PetMapper;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ public class PetService {
     private final PetRepository petRepository;
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final PetMapper petMapper;
 
     public PetDTO createPet(String token, String name) {
         if (!jwtTokenProvider.validateToken(token)) {
@@ -45,19 +47,7 @@ public class PetService {
 
         Pet savedPet = petRepository.save(pet);
 
-        return new PetDTO(
-            savedPet.getId(),
-            savedPet.getName(),
-            savedPet.getHealth(),
-            savedPet.getHappiness(),
-            savedPet.getHunger(),
-            savedPet.getLevel(),
-            savedPet.getXp(),
-            savedPet.getLastFedAt(),
-            savedPet.getLastPlayedAt(),
-            savedPet.getCreatedAt(),
-            savedPet.getUpdatedAt()
-        );
+        return petMapper.toDTO(savedPet);
     }
 
     public PetDTO getPetById(String token, UUID id) {
@@ -72,18 +62,44 @@ public class PetService {
         Pet pet = petRepository.findByIdAndUser(id, user)
             .orElseThrow(() -> new InvalidRequestException("Pet not found or you don't own this pet."));
 
-        return new PetDTO(
-                pet.getId(),
-                pet.getName(),
-                pet.getHealth(),
-                pet.getHappiness(),
-                pet.getHunger(),
-                pet.getLevel(),
-                pet.getXp(),
-                pet.getLastFedAt(),
-                pet.getLastPlayedAt(),
-                pet.getCreatedAt(),
-                pet.getUpdatedAt()
-        );
+        return petMapper.toDTO(pet);
+    }
+
+    public PetDTO updatePet(String token, UUID id, String newName) {
+        if (!jwtTokenProvider.validateToken(token)) {
+            throw new InvalidRequestException("Invalid token.");
+        }
+
+        String email = jwtTokenProvider.getEmailFromToken(token);
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new InvalidRequestException("User not found."));
+
+        Pet pet = petRepository.findByIdAndUser(id, user)
+            .orElseThrow(() -> new InvalidRequestException("Pet not found or you don't own this pet."));
+
+        // Check if new name is unique for this user (excluding current pet)
+        if (!pet.getName().equals(newName) && petRepository.existsByUserAndName(user, newName)) {
+            throw new InvalidRequestException("You already have a pet named " + newName);
+        }
+
+        pet.setName(newName);
+        Pet updatedPet = petRepository.save(pet);
+
+        return petMapper.toDTO(updatedPet);
+    }
+
+    public void deletePet(String token, UUID id) {
+        if (!jwtTokenProvider.validateToken(token)) {
+            throw new InvalidRequestException("Invalid token.");
+        }
+
+        String email = jwtTokenProvider.getEmailFromToken(token);
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new InvalidRequestException("User not found."));
+
+        Pet pet = petRepository.findByIdAndUser(id, user)
+            .orElseThrow(() -> new InvalidRequestException("Pet not found or you don't own this pet."));
+
+        petRepository.delete(pet);
     }
 }
