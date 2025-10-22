@@ -1,6 +1,7 @@
 package com.mydevduck.service;
 
 import com.mydevduck.dto.response.PetDTO;
+import com.mydevduck.dto.response.PetStatsDTO;
 import com.mydevduck.exception.InvalidRequestException;
 import com.mydevduck.model.Pet;
 import com.mydevduck.model.User;
@@ -8,6 +9,7 @@ import com.mydevduck.repository.PetRepository;
 import com.mydevduck.repository.UserRepository;
 import com.mydevduck.security.JwtTokenProvider;
 import com.mydevduck.util.PetMapper;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,6 +27,7 @@ public class PetService {
     private final JwtTokenProvider jwtTokenProvider;
     private final PetMapper petMapper;
 
+    @Transactional
     public PetDTO createPet(String token, String name) {
         if (!jwtTokenProvider.validateToken(token)) {
             throw new InvalidRequestException("Invalid token.");
@@ -66,6 +69,7 @@ public class PetService {
         return petMapper.toDTO(pet);
     }
 
+    @Transactional
     public PetDTO updatePet(String token, UUID id, String newName) {
         if (!jwtTokenProvider.validateToken(token)) {
             throw new InvalidRequestException("Invalid token.");
@@ -89,6 +93,7 @@ public class PetService {
         return petMapper.toDTO(updatedPet);
     }
 
+    @Transactional
     public void deletePet(String token, UUID id) {
         if (!jwtTokenProvider.validateToken(token)) {
             throw new InvalidRequestException("Invalid token.");
@@ -104,6 +109,7 @@ public class PetService {
         petRepository.delete(pet);
     }
 
+    @Transactional
     public PetDTO feedPet(String token, UUID id) {
         if (!jwtTokenProvider.validateToken(token)) {
             throw new InvalidRequestException("Invalid token.");
@@ -131,6 +137,7 @@ public class PetService {
         return petMapper.toDTO(updatedPet);
     }
 
+    @Transactional
     public PetDTO playWithPet(String token, UUID id) {
         if (!jwtTokenProvider.validateToken(token)) {
             throw new InvalidRequestException("Invalid token.");
@@ -156,5 +163,33 @@ public class PetService {
         Pet updatedPet = petRepository.save(pet);
 
         return petMapper.toDTO(updatedPet);
+    }
+
+    public PetStatsDTO getStats(String token, UUID id) {
+        if (!jwtTokenProvider.validateToken(token)) {
+            throw new InvalidRequestException("Invalid token.");
+        }
+
+        String email = jwtTokenProvider.getEmailFromToken(token);
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new InvalidRequestException("User with this email doesn't exist"));
+
+        Pet pet = petRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new InvalidRequestException("User does not own this pet."));
+
+        int calculatedLevel = pet.getXp() / 100;
+
+        return PetStatsDTO.fromPet(
+                pet.getHealth(),
+                pet.getHappiness(),
+                pet.getHunger(),
+                calculatedLevel,
+                pet.getXp(),
+                pet.getLastFedAt(),
+                pet.getLastPlayedAt(),
+                pet.getCreatedAt()
+        );
+
     }
 }

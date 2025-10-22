@@ -1,9 +1,12 @@
 package com.mydevduck.dto.response;
 
+import com.mydevduck.model.PetStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -18,15 +21,39 @@ public class PetStatsDTO {
     private Double healthPercentage;
     private Double happinessPercentage;
     private Double hungerPercentage;
-    private String status; // e.g., "Healthy", "Hungry", "Sad", "Critical"
+    private PetStatus status;
     private Boolean needsAttention;
 
-    public static PetStatsDTO fromPet(Integer health, Integer happiness, Integer hunger, Integer level, Integer xp) {
-        int nextLevelXp = level * 100;
+    // Time-based fields
+    private Long hoursSinceLastFed;
+    private Long hoursSinceLastPlayed;
+    private Long ageInHours;
+    private LocalDateTime lastFedAt;
+    private LocalDateTime lastPlayedAt;
+    private LocalDateTime createdAt;
+
+    public static PetStatsDTO fromPet(Integer health, Integer happiness, Integer hunger, Integer level, Integer xp,
+                                       LocalDateTime lastFedAt, LocalDateTime lastPlayedAt, LocalDateTime createdAt) {
+        int nextLevelXp = (level + 1) * 100;
         int xpToNextLevel = nextLevelXp - xp;
 
-        String status = determineStatus(health, happiness, hunger);
-        boolean needsAttention = health < 30 || happiness < 30 || hunger > 70;
+        PetStatus status = determineStatus(health, happiness, hunger);
+        boolean needsAttention = health < 30 || happiness < 30 || hunger < 30;
+
+        LocalDateTime now = LocalDateTime.now();
+
+        // Calculate hours since last interactions
+        Long hoursSinceLastFed = lastFedAt != null
+            ? java.time.Duration.between(lastFedAt, now).toHours()
+            : null;
+
+        Long hoursSinceLastPlayed = lastPlayedAt != null
+            ? java.time.Duration.between(lastPlayedAt, now).toHours()
+            : null;
+
+        Long ageInHours = createdAt != null
+            ? java.time.Duration.between(createdAt, now).toHours()
+            : 0L;
 
         return PetStatsDTO.builder()
                 .totalXp(xp)
@@ -38,21 +65,33 @@ public class PetStatsDTO {
                 .hungerPercentage(hunger.doubleValue())
                 .status(status)
                 .needsAttention(needsAttention)
+                .hoursSinceLastFed(hoursSinceLastFed)
+                .hoursSinceLastPlayed(hoursSinceLastPlayed)
+                .ageInHours(ageInHours)
+                .lastFedAt(lastFedAt)
+                .lastPlayedAt(lastPlayedAt)
+                .createdAt(createdAt)
                 .build();
     }
 
-    private static String determineStatus(Integer health, Integer happiness, Integer hunger) {
-        if (health < 20 || happiness < 20 || hunger > 90) {
-            return "Critical";
-        } else if (health < 40 || happiness < 40 || hunger > 70) {
-            return "Needs Care";
-        } else if (hunger > 60) {
-            return "Hungry";
-        } else if (happiness < 60) {
-            return "Sad";
-        } else {
-            return "Healthy";
+    private static PetStatus determineStatus(Integer health, Integer happiness, Integer hunger) {
+        // DYING takes priority - critically low stats
+        if (hunger < 20 || happiness < 20) {
+            return PetStatus.DYING;
         }
+
+        // SAD - low happiness but not critical
+        if (happiness < 50) {
+            return PetStatus.SAD;
+        }
+
+        // HUNGRY - low hunger but not critical
+        if (hunger < 50) {
+            return PetStatus.HUNGRY;
+        }
+
+        // HEALTHY - all stats are good
+        return PetStatus.HEALTHY;
     }
 
 }

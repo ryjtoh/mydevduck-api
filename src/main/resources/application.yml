@@ -69,6 +69,6 @@ logging:
 
 # JWT Configuration
 jwt:
-  secret: ${JWT_SECRET:your-256-bit-secret-key-change-this-in-production-min-32-chars}
+  secret: ${JWT_SECRET}  # MUST be set via environment variable (min 32 chars)
   expiration: 3600000  # 1 hour in milliseconds (3600 seconds * 1000)
   refresh-expiration: 604800000  # 7 days in milliseconds

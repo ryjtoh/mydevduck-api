@@ -1,46 +1,18 @@
 # MyDevDuck API
 
-Spring Boot 3.2.x REST API for MyDevDuck application.
+A Spring Boot REST API for a virtual pet application with gamification features. Users can create and manage virtual pets, interact with them through feeding and playing, and track their progress through an XP and leveling system.
 
-## Future Enhancements / TODOs
+## Features
 
-### High Priority
-- **Integration Tests for AuthService** (STRONGLY RECOMMENDED)
-  - Test successful registration, login, token refresh
-  - Test duplicate email registration (409 error)
-  - Test invalid credentials (401 error)
-  - Test expired/invalid refresh tokens
-  - Test brute force protection lockout
-  - Use `@SpringBootTest`, `TestRestTemplate`, and test database (H2)
-  - Create test fixtures for User entities
-
-- **Refresh Token Database Storage** (RECOMMENDED)
-  - Create `RefreshToken` entity with: id, userId, token, expiresAt, createdAt
-  - Save refresh token to database on login
-  - On logout: delete refresh token from database
-  - On refresh: verify token exists in database before issuing new access token
-  - Add scheduled job to clean up expired tokens
-  - Enables token revocation for security
-
-### Medium Priority
-- **Add Swagger/OpenAPI Documentation** (RECOMMENDED)
-  - Add `@Tag(name = "Authentication", description = "Authentication endpoints")` to controllers
-  - Add `@Operation`, `@ApiResponse` annotations to each endpoint
-  - Document request/response schemas with examples
-  - Configure Swagger UI in application.yml
-
-- **Repository Tests**
-  - Add unit tests for repository layer
-
-### Low Priority
-- **Custom Exception Handling** (OPTIONAL)
-  - Use the existing `EmailAlreadyExistsException` in AuthService
-  - Add `@ControllerAdvice` to handle exceptions globally
-  - Replace `ResponseStatusException` with custom exceptions throughout codebase
-
-- **Add validation annotations in controllers**
-  - Ensure all `@RequestBody` parameters use `@Valid`
-  - Add appropriate constraint annotations to DTOs
+- **User Authentication**: JWT-based authentication with access and refresh tokens
+- **Pet Management**: Create, read, update, and delete virtual pets (max 5 per user)
+- **Pet Interactions**:
+  - Feed pets to increase hunger levels and earn XP
+  - Play with pets to increase happiness and earn XP
+  - View detailed pet statistics including health status and time since last interaction
+- **Leveling System**: Pets gain XP through interactions and level up (100 XP per level)
+- **Pet Status Tracking**: Automatic status calculation (HEALTHY, HUNGRY, SAD, DYING)
+- **Brute Force Protection**: Account lockout after failed login attempts
 
 ## Technology Stack
 
@@ -56,72 +28,91 @@ Spring Boot 3.2.x REST API for MyDevDuck application.
 - Java 17+
 - Maven 3.6+
 - PostgreSQL 14+
-- Redis 6+
+- Redis 6+ (optional, using simple cache by default)
 
-## Configuration
+## Getting Started
 
-### Database Setup
+### 1. Clone the Repository
 
-1. Create PostgreSQL database:
+```bash
+git clone https://github.com/yourusername/mydevduck.git
+cd mydevduck
+```
+
+### 2. Database Setup
+
+Create a PostgreSQL database:
 ```sql
 CREATE DATABASE mydevduck_dev;
 ```
 
-2. Update `src/main/resources/application.yml` with your database credentials:
-```yaml
-spring:
-  datasource:
-    username: your_username
-    password: your_password
-```
+### 3. Environment Configuration
 
-### Environment Variables
-
-Set the following environment variables:
-
-- `DB_USERNAME`: Database username (default: postgres)
-- `DB_PASSWORD`: Database password (default: postgres)
-- `REDIS_PASSWORD`: Redis password (if required)
-- `JWT_SECRET`: JWT secret key (must be at least 256 bits)
-
-### JWT Secret
-
-Generate a secure JWT secret:
+Copy the example environment file and fill in your values:
 ```bash
-openssl rand -base64 32
+cp .env.dev.example .env.dev
 ```
 
-Set it as an environment variable or in application.yml.
+Edit `.env.dev` and set your configuration:
+- `DB_USERNAME`, `DB_PASSWORD`, `DB_NAME`: Your PostgreSQL credentials
+- `JWT_SECRET`: Generate with `openssl rand -base64 32` (must be at least 32 characters)
 
-## Running the Application
+### 4. Load Environment Variables
 
-### Development Mode
+```bash
+# On Linux/Mac
+export $(cat .env.dev | xargs)
+
+# On Windows (PowerShell)
+Get-Content .env.dev | ForEach-Object { $var = $_.Split('='); [Environment]::SetEnvironmentVariable($var[0], $var[1]) }
+```
+
+### 5. Run the Application
 
 ```bash
 mvn spring-boot:run
 ```
 
-### Production Mode
+The API will be available at `http://localhost:8080`
+
+## API Endpoints
+
+### Health Check
+```
+GET /api/v1/health
+```
+
+### Authentication
+```
+POST /api/v1/auth/register    # Register new user
+POST /api/v1/auth/login       # Login
+POST /api/v1/auth/refresh     # Refresh access token
+GET  /api/v1/auth/me          # Get current user info
+```
+
+### Pet Management
+```
+POST   /api/v1/pets/create    # Create new pet
+GET    /api/v1/pets/{id}      # Get pet by ID
+PUT    /api/v1/pets/{id}      # Update pet name
+DELETE /api/v1/pets/{id}      # Delete pet
+```
+
+### Pet Interactions
+```
+POST /api/v1/pets/{id}/feed   # Feed pet (+20 hunger, +5 XP)
+POST /api/v1/pets/{id}/play   # Play with pet (+15 happiness, +3 XP)
+GET  /api/v1/pets/{id}/stats  # Get detailed pet statistics
+```
+
+## Production Deployment
 
 ```bash
 mvn clean package
 java -jar -Dspring.profiles.active=prod target/mydevduck-api-0.0.1-SNAPSHOT.jar
 ```
 
-## API Endpoints
-
-### Health Check
-
-```
-GET /api/health
-```
-
-### Authentication
-
-```
-POST /api/auth/login
-POST /api/auth/register
-```
+Make sure to set production environment variables and use a secure JWT secret.
 
 ## Project Structure
 
@@ -138,19 +129,18 @@ com.mydevduck
 └── util             # Helper utilities
 ```
 
-## Development
+## Contributing
 
-### Code Style
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-- Use Lombok annotations to reduce boilerplate
-- Follow Spring Boot best practices
-- Write unit tests for services
-- Use validation annotations on DTOs
+## Future Enhancements
 
-### Database Migrations
-
-Consider using Flyway or Liquibase for production database migrations (set `ddl-auto: validate`).
+See [TODO.md](TODO.md) for planned features and improvements.
 
 ## License
 
-Proprietary
+This project is licensed under the MIT License - see the LICENSE file for details.
