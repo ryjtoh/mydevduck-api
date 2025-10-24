@@ -45,11 +45,10 @@ spring:
           max-wait: -1ms
 
   cache:
-    type: simple  # Use simple in-memory cache (disable Redis for testing)
-    # type: redis
-    # redis:
-    #   time-to-live: 3600000  # 1 hour in milliseconds
-    #   cache-null-values: false
+    type: redis  # Use Redis for caching
+    redis:
+      time-to-live: 3600000  # 1 hour in milliseconds
+      cache-null-values: false
 
 server:
   port: 8080

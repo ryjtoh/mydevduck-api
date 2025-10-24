@@ -12,6 +12,9 @@ import com.mydevduck.util.PetMapper;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -28,6 +31,7 @@ public class PetService {
     private final JwtTokenProvider jwtTokenProvider;
     private final PetMapper petMapper;
 
+    @CachePut(value = "pets", key = "'pet:' + #result.id")
     @Transactional
     public PetDTO createPet(String token, String name) {
         if (!jwtTokenProvider.validateToken(token)) {
@@ -55,6 +59,7 @@ public class PetService {
         return petMapper.toDTO(savedPet);
     }
 
+    @Cacheable(value = "pets", key = "'pet:' + #id")
     public PetDTO getPetById(String token, UUID id) {
         if (!jwtTokenProvider.validateToken(token)) {
             throw new InvalidRequestException("Invalid token.");
@@ -70,6 +75,7 @@ public class PetService {
         return petMapper.toDTO(pet);
     }
 
+    @CacheEvict(value = "pets", key = "'pet:' + #id")
     @Transactional
     public PetDTO updatePet(String token, UUID id, String newName) {
         if (!jwtTokenProvider.validateToken(token)) {
@@ -94,6 +100,7 @@ public class PetService {
         return petMapper.toDTO(updatedPet);
     }
 
+    @CacheEvict(value = "pets", key = "'pet:' + #id")
     @Transactional
     public void deletePet(String token, UUID id) {
         if (!jwtTokenProvider.validateToken(token)) {
@@ -110,6 +117,7 @@ public class PetService {
         petRepository.delete(pet);
     }
 
+    @CacheEvict(value = "pets", key = "'pet:' + #id")
     @Transactional
     public PetDTO feedPet(String token, UUID id) {
         if (!jwtTokenProvider.validateToken(token)) {
@@ -138,6 +146,7 @@ public class PetService {
         return petMapper.toDTO(updatedPet);
     }
 
+    @CacheEvict(value = "pets", key = "'pet:' + #id")
     @Transactional
     public PetDTO playWithPet(String token, UUID id) {
         if (!jwtTokenProvider.validateToken(token)) {
@@ -165,6 +174,7 @@ public class PetService {
 
         return petMapper.toDTO(updatedPet);
     }
+
 
     public PetStatsDTO getStats(String token, UUID id) {
         if (!jwtTokenProvider.validateToken(token)) {
@@ -194,6 +204,7 @@ public class PetService {
 
     }
 
+    @CacheEvict(value = "pets", key = "'pet:' + #id")
     @Transactional
     public PetDTO revivePet(String token, UUID petId) {
         if (!jwtTokenProvider.validateToken(token)) {
